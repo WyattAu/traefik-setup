@@ -1,3 +1,4 @@
+# .github/workflows/ci.yml
 name: CI
 
 on:
@@ -9,17 +10,17 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      TRAEFIK_VERSION: v3.5  # Default version for CI
+      LOG_LEVEL: INFO
+      ACME_EMAIL: test@example.com
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    # https://github.com/docker/setup-compose-action
-    #- name: Set up Docker Compose
-    #  uses: docker/setup-compose-action@v1
-
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-
+    
     - name: Install Docker Compose
       run: |
         sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -28,22 +29,35 @@ jobs:
     
     - name: Prepare environment
       run: |
-        cp .env.example .env
         mkdir -p config/dynamic
     
     - name: Validate docker-compose configuration
       run: |
+        # Create minimal .env for docker-compose
+        echo "TRAEFIK_VERSION=${{ env.TRAEFIK_VERSION }}" > .env
+        echo "LOG_LEVEL=${{ env.LOG_LEVEL }}" >> .env
+        echo "ACME_EMAIL=${{ env.ACME_EMAIL }}" >> .env
+        echo "TRAEFIK_DASHBOARD_CREDENTIALS=test:$$apr1$$..." >> .env
+        echo "TRAEFIK_DASHBOARD_DOMAIN=test.example.com" >> .env
+        echo "TRAEFIK_CONFIG=./config" >> .env
+        echo "TRAEFIK_DATA=./test-data" >> .env
+        echo "TRAEFIK_LOGS=./test-logs" >> .env
+        
+        mkdir -p test-data test-logs
+        
         docker-compose config
     
     - name: Validate Traefik configuration
       run: |
-        # Create a test config without environment variables for validation
+        # Create test config with substituted values for validation
         cp config/traefik.yml config/traefik-test.yml
-        sed -i 's/${LOG_LEVEL:-INFO}/INFO/g' config/traefik-test.yml
-        sed -i 's/${ACME_EMAIL}/test@example.com/g' config/traefik-test.yml
-        sed -i 's/${LOG_LEVEL:-INFO}/INFO/g' config/traefik-test.yml
+        
+        # Substitute environment variables with CI defaults
+        sed -i "s/\${LOG_LEVEL:-INFO}/${{ env.LOG_LEVEL }}/g" config/traefik-test.yml
+        sed -i "s/\${ACME_EMAIL}/${{ env.ACME_EMAIL }}/g" config/traefik-test.yml
+        sed -i "s/\${ACME_CHALLENGE_TYPE}/- --certificatesresolvers.letsencrypt.acme.httpchallenge=true - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web/g" config/traefik-test.yml
         
         docker run --rm \
           -v $(pwd)/config:/etc/traefik \
-          traefik:v3.5 \
+          traefik:${{ env.TRAEFIK_VERSION }} \
           traefik --configFile=/etc/traefik/traefik-test.yml
