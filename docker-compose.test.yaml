@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  traefik:
+    volumes:
+      - ./config:/etc/traefik
+      - ./test-data:/data
+      - ./test-logs:/logs
+    environment:
+      - TRAEFIK_DASHBOARD_CREDENTIALS=test:$$apr1$$... # Test credentials
+    healthcheck:
+      disable: true
+
+volumes:
+  test-data:
+  test-logs:
