@@ -16,15 +16,16 @@ entryPoints:
           permanent: true
   websecure:
     address: ":443"
-    # HTTP/3 is now stable in v3+
+    # HTTP/3 configuration for Traefik v3.5
     http3:
       advertisedPort: 443
-    # QUIC configuration (optional)
-    quic: {}
-    # Enable Proxy Protocol if needed
-    # proxyProtocol:
-    #   trustedIPs:
-    #     - 172.20.0.0/16
+    # QUIC configuration (properly structured)
+    # Note: In Traefik v3.5, quic is configured within http3
+    # If you need specific QUIC settings, uncomment and adjust:
+    # quic:
+    #   maxIdleTimeout: 30s
+    #   maxIncomingStreams: 100
+    #   connIdLength: 8
 
 # Certificate Resolvers
 certificatesResolvers:
@@ -35,12 +36,6 @@ certificatesResolvers:
       keyType: RSA4096
       httpChallenge:
         entryPoint: web
-      # dnsChallenge:
-      #   provider: cloudflare
-      #   delayBeforeCheck: 0
-      #   resolvers:
-      #     - "1.1.1.1:53"
-      #     - "8.8.8.8:53"
 
 # API and Dashboard Configuration
 api:
@@ -62,15 +57,10 @@ accessLog:
     defaultMode: keep
     names:
       Authorization: drop
-      X-Forwarded-For: keep
-      X-Real-IP: keep
-      User-Agent: keep
     headers:
       defaultMode: keep
       names:
         Authorization: drop
-        X-Forwarded-For: keep
-        X-Real-IP: keep
 
 # Providers Configuration
 providers:
@@ -78,19 +68,6 @@ providers:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
     network: traefik
-    swarmMode: false
-    useBindPortIP: false
-    refreshSeconds: 15
   file:
     directory: /etc/traefik/config/dynamic
     watch: true
-
-# Metrics Configuration (if using Prometheus)
-# metrics:
-#   prometheus:
-#     buckets:
-#       - 0.1
-#       - 0.3
-#       - 1.2
-#       - 5.0
-#     entryPoint: metrics
