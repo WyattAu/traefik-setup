@@ -29,6 +29,7 @@ services:
       # API and Dashboard
       - --api=true
       - --api.dashboard=true
+      - --api.insecure=true
       
       # Logging
       - --log.level=${LOG_LEVEL:-INFO}
