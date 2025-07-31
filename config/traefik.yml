@@ -19,19 +19,12 @@ entryPoints:
     # HTTP/3 configuration for Traefik v3.5
     http3:
       advertisedPort: 443
-    # QUIC configuration (properly structured)
-    # Note: In Traefik v3.5, quic is configured within http3
-    # If you need specific QUIC settings, uncomment and adjust:
-    # quic:
-    #   maxIdleTimeout: 30s
-    #   maxIncomingStreams: 100
-    #   connIdLength: 8
 
 # Certificate Resolvers
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: ${ACME_EMAIL}
+      email: test@example.com  # Default for CI, overridden by env vars
       storage: /data/acme.json
       keyType: RSA4096
       httpChallenge:
@@ -44,7 +37,7 @@ api:
 
 # Log Configuration
 log:
-  level: ${LOG_LEVEL:-INFO}
+  level: INFO  # Default for CI, overridden by env vars
   format: json
   filePath: /logs/traefik.log
 

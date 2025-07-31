@@ -19,12 +19,13 @@ echo "Validating docker-compose.yml..."
 docker-compose config > /dev/null
 echo "✓ docker-compose.yml is valid"
 
-# Validate Traefik configuration
-echo "Validating Traefik v3.5 configuration..."
+# Validate Traefik configuration with environment variables
+echo "Validating Traefik v3.5 configuration with environment variables..."
 docker run --rm \
   -v "$(pwd)/config":/etc/traefik \
   -v "$(pwd)/test-data":/data \
   -v "$(pwd)/test-logs":/logs \
+  --env-file .env \
   traefik:v3.5 \
   traefik --configFile=/etc/traefik/traefik.yml > /dev/null
 echo "✓ Traefik v3.5 configuration is valid"
