@@ -1,0 +1,52 @@
+# Gitea External Service Configuration
+http:
+  routers:
+    gitea:
+      rule: "Host(`gitea.mysite.com`)"
+      entryPoints:
+        - websecure
+      service: gitea
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - gitea-security
+        - gitea-compress
+
+  services:
+    gitea:
+      loadBalancer:
+        servers:
+          - url: "http://localhost:30008/"
+        passHostHeader: true
+        healthCheck:
+          path: /api/healthz
+          interval: "30s"
+          timeout: "5s"
+
+  middlewares:
+    gitea-security:
+      headers:
+        # SSL/Security Headers
+        sslRedirect: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "same-origin"
+        permissionsPolicy: "geolocation=(), midi=(), notifications=(), push=(), sync-xhr=(), microphone=(), camera=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(self), payment=()"
+        
+        # Cloudflare Compatible Headers
+        customFrameOptionsValue: "SAMEORIGIN"
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+
+    gitea-compress:
+      compress: {}
+
+# Optional: Rate limiting
+#    gitea-rate-limit:
+#      rateLimit:
+#        average: 100
+#        burst: 200
