@@ -50,7 +50,10 @@ Edit .env with your values
 echo $(htpasswd -nb admin yourpassword) | sed -e s/\\$/\\$\\$/g
 ```
 
-5. Deploy with Docker Compose:
+5. Add `traefik.yml` to `TRAEFIK_CONFIG/config`
+6. create `TRAEFIK_CONFIG/config/dynamic` folder
+
+7. Deploy with Docker Compose:
 
 ```bash
 docker-compose up -d

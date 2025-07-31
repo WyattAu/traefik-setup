@@ -7,6 +7,8 @@ services:
       # Global Settings
       - --global.checknewversion=false
       - --global.sendanonymoususage=false
+      - --ping=true
+      - --ping.entrypoint=web
       
       # EntryPoints
       - --entrypoints.web.address=:80
