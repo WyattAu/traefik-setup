@@ -137,6 +137,7 @@ services:
 networks:
   traefik:
     name: traefik_default 
-    external: true
+    # Let docker-compose manage since reusing is not required
+    # external: true
 
     
