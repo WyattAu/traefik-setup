@@ -1,9 +1,8 @@
-# version tag deprecated
-# version: '3.8'
+version: '3.8'
 
 services:
   traefik:
-    image: traefik:${TRAEFIK_VERSION:-v3.5}
+    image: traefik:v3.5
     container_name: traefik
     restart: unless-stopped
     command:
@@ -21,7 +20,7 @@ services:
       - --providers.docker.network=traefik
       
       # File Provider
-      - --providers.file.directory=/etc/traefik/config
+      - --providers.file.directory=/etc/traefik/config/dynamic
       - --providers.file.watch=true
       
       # API and Dashboard
@@ -32,22 +31,14 @@ services:
       - --log.level=${LOG_LEVEL:-INFO}
       - --log.format=json
       - --accesslog=true
-      - --accesslog.filepath=/data/access.log
+      - --accesslog.filepath=/logs/access.log
       - --accesslog.format=json
       - --accesslog.fields.names.Authorization=drop
-      
-      # Tracing (if enabled)
-      - --tracing.jaeger=true
-      - --tracing.jaeger.samplingparam=1.0
-      - --tracing.jaeger.samplingserverurl=http://jaeger:5778/sampling
       
       # Certificates Resolvers
       - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
       - --certificatesresolvers.letsencrypt.acme.storage=/data/acme.json
       - --certificatesresolvers.letsencrypt.acme.keytype=RSA4096${ACME_CHALLENGE_TYPE}
-      
-      # Security Headers
-      - --experimental.http3=true
       
     ports:
       - target: 80
