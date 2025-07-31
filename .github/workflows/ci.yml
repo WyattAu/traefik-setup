@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Validate docker-compose
+      run: |
+        docker-compose config
+    
+    - name: Validate Traefik config
+      run: |
+        docker run --rm -v $(pwd)/config:/etc/traefik traefik:${{ vars.TRAEFIK_VERSION }} traefik --configFile=/etc/traefik/traefik.yml

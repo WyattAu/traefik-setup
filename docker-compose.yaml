@@ -1,0 +1,151 @@
+# version tag deprecated
+# version: '3.8'
+
+services:
+  traefik:
+    image: traefik:${TRAEFIK_VERSION:-v3.5}
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      # Global Settings
+      - --global.checknewversion=false
+      - --global.sendanonymoususage=false
+      
+      # EntryPoints
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      
+      # Docker Provider
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=traefik
+      
+      # File Provider
+      - --providers.file.directory=/etc/traefik/config
+      - --providers.file.watch=true
+      
+      # API and Dashboard
+      - --api=true
+      - --api.dashboard=true
+      
+      # Logging
+      - --log.level=${LOG_LEVEL:-INFO}
+      - --log.format=json
+      - --accesslog=true
+      - --accesslog.filepath=/data/access.log
+      - --accesslog.format=json
+      - --accesslog.fields.names.Authorization=drop
+      
+      # Tracing (if enabled)
+      - --tracing.jaeger=true
+      - --tracing.jaeger.samplingparam=1.0
+      - --tracing.jaeger.samplingserverurl=http://jaeger:5778/sampling
+      
+      # Certificates Resolvers
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/data/acme.json
+      - --certificatesresolvers.letsencrypt.acme.keytype=RSA4096${ACME_CHALLENGE_TYPE}
+      
+      # Security Headers
+      - --experimental.http3=true
+      
+    ports:
+      - target: 80
+        published: 80
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
+        protocol: udp
+    volumes:
+      - ${TRAEFIK_CONFIG}:/etc/traefik
+      - ${TRAEFIK_DATA}:/data
+      - ${TRAEFIK_LOGS}:/logs
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
+      - CF_API_KEY=${CLOUDFLARE_API_KEY}
+      - CLOUDFLARE_DNS_API_TOKEN=${CLOUDFLARE_DNS_API_TOKEN}
+      - NAMECHEAP_API_USER=${NAMECHEAP_API_USER}
+      - NAMECHEAP_API_KEY=${NAMECHEAP_API_KEY}
+    networks:
+      - traefik
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "traefik.enable=true"
+      
+      # HTTP to HTTPS redirect
+      - "traefik.http.routers.redirect-to-https.entrypoints=web"
+      - "traefik.http.routers.redirect-to-https.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.routers.redirect-to-https.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      
+      # Dashboard
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DASHBOARD_DOMAIN}`)"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth,secure-headers"
+      
+      # Basic Auth
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
+      
+      # Security Headers
+      - "traefik.http.middlewares.secure-headers.headers.framedeny=true"
+      - "traefik.http.middlewares.secure-headers.headers.sslredirect=true"
+      - "traefik.http.middlewares.secure-headers.headers.stsseconds=31536000"
+      - "traefik.http.middlewares.secure-headers.headers.stsincludesubdomains=true"
+      - "traefik.http.middlewares.secure-headers.headers.stspreload=true"
+      - "traefik.http.middlewares.secure-headers.headers.contenttypenosniff=true"
+      - "traefik.http.middlewares.secure-headers.headers.browserxssfilter=true"
+      - "traefik.http.middlewares.secure-headers.headers.referrerpolicy=same-origin"
+      - "traefik.http.middlewares.secure-headers.headers.customresponseheaders.X-Robots-Tag=none,noarchive,nosnippet,notranslate,noimageindex"
+      - "traefik.http.middlewares.secure-headers.headers.customframeoptionsvalue=SAMEORIGIN"
+      - "traefik.http.middlewares.secure-headers.headers.permitsourcetypes=font-src 'self'; form-action 'self'; frame-ancestors 'self'; img-src 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'"
+      - "traefik.http.middlewares.secure-headers.headers.hostsproxyheaders=X-Forwarded-Host"
+      - "traefik.http.middlewares.secure-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      
+      # Rate Limiting
+      - "traefik.http.middlewares.traefik-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.traefik-ratelimit.ratelimit.burst=200"
+      
+      # Compress
+      - "traefik.http.middlewares.traefik-compress.compress=true"
+      
+      # Retry
+      - "traefik.http.middlewares.traefik-retry.retry.attempts=3"
+      
+      # Chain
+      - "traefik.http.middlewares.traefik-chain.chain.middlewares=traefik-auth,secure-headers,traefik-compress,traefik-retry,traefik-ratelimit"
+      
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      - init-traefik
+
+  init-traefik:
+    image: alpine:latest
+    command: >
+      sh -c "
+        touch /data/acme.json &&
+        chmod 600 /data/acme.json &&
+        chown 65532:65532 /data/acme.json &&
+        echo 'Initialization complete'
+      "
+    volumes:
+      - ${TRAEFIK_DATA}:/data
+    user: root
+
+networks:
+  traefik:
+    name: traefik
+    external: false

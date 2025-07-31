@@ -1,0 +1,122 @@
+# config/traefik.yml
+# Global Configuration
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+# EntryPoints Configuration
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      # Redirect to HTTPS
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+    # Enable Proxy Protocol if needed
+    # proxyProtocol:
+    #   trustedIPs:
+    #     - 172.20.0.0/16
+  websecure:
+    address: ":443"
+    # Enable HTTP/3
+    http3:
+      advertisedPort: 443
+    # Enable Proxy Protocol if needed
+    # proxyProtocol:
+    #   trustedIPs:
+    #     - 172.20.0.0/16
+    # Enable QUIC if needed
+    # quic:
+    #   maxIdleTimeout: 30s
+    #   maxIncomingStreams: 100
+    #   connIdLength: 8
+
+# Certificate Resolvers
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: ${ACME_EMAIL}
+      storage: /data/acme.json
+      keyType: RSA4096
+      httpChallenge:
+        entryPoint: web
+      # dnsChallenge:
+      #   provider: cloudflare
+      #   delayBeforeCheck: 0
+      #   resolvers:
+      #     - "1.1.1.1:53"
+      #     - "8.8.8.8:53"
+      # caServer: https://acme-staging-v02.api.letsencrypt.org/directory # For testing
+
+# API and Dashboard Configuration
+api:
+  dashboard: true
+  debug: false
+
+# Log Configuration
+log:
+  level: ${LOG_LEVEL:-INFO}
+  format: json
+  filePath: /logs/traefik.log
+
+# Access Log Configuration
+accessLog:
+  filePath: /logs/access.log
+  format: json
+  bufferingSize: 100
+  fields:
+    defaultMode: keep
+    names:
+      Authorization: drop
+      X-Forwarded-For: keep
+      X-Real-IP: keep
+      User-Agent: keep
+    headers:
+      defaultMode: keep
+      names:
+        Authorization: drop
+        X-Forwarded-For: keep
+        X-Real-IP: keep
+
+# Tracing Configuration (if using Jaeger)
+# tracing:
+#   jaeger:
+#     samplingServerURL: http://jaeger:5778/sampling
+#     samplingType: const
+#     samplingParam: 1.0
+
+# Metrics Configuration (if using Prometheus)
+# metrics:
+#   prometheus:
+#     buckets:
+#       - 0.1
+#       - 0.3
+#       - 1.2
+#       - 5.0
+#     entryPoint: metrics
+#   entryPoint:
+#     - metrics
+
+# Experimental Features
+experimental:
+  http3: true
+  # plugins:
+  #   plugin-name:
+  #     moduleName: github.com/xxx/xxx
+  #     version: v0.0.1
+
+# Providers Configuration
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: traefik
+    swarmMode: false
+    useBindPortIP: false
+    refreshSeconds: 15
+  file:
+    directory: /etc/traefik/config
+    watch: true
