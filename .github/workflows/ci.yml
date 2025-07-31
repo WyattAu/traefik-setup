@@ -33,7 +33,7 @@ jobs:
     
     - name: Validate Traefik static configuration
       run: |
-        docker run --rm -v $(pwd)/config:/etc/traefik -v $(pwd)/.env:/run/secrets/env traefik:${{ vars.TRAEFIK_VERSION || 'v2.10' }} traefik --configFile=/etc/traefik/traefik.yml
+        docker run --rm -v $(pwd)/config:/etc/traefik -v $(pwd)/.env:/run/secrets/env traefik:${{ vars.TRAEFIK_VERSION || 'v3.5' }} traefik --configFile=/etc/traefik/traefik.yml
     
     - name: Check for syntax errors in dynamic configs
       run: |
