@@ -56,6 +56,11 @@ services:
         published: 443
         mode: host
         protocol: udp
+      - target: 8082 
+        published: 8082
+        mode: host
+        protocol: tcp
+
     volumes:
       - ${TRAEFIK_CONFIG}:/etc/traefik
       - ${TRAEFIK_DATA}:/data
