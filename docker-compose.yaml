@@ -15,7 +15,7 @@ services:
       # Docker Provider
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=traefik_default 
+      - --providers.docker.network=${COMPOSE_PROJECT_NAME:-traefik}_default
       
       # File Provider
       - --providers.file.directory=/etc/traefik/config/dynamic
@@ -45,6 +45,7 @@ services:
       - target: 443
         published: 443
         mode: host
+        protocol: tcp
       - target: 443
         published: 443
         mode: host
@@ -136,7 +137,7 @@ services:
 
 networks:
   traefik:
-    name: traefik_default 
+    name: ${COMPOSE_PROJECT_NAME:-traefik}_default
     # Let docker-compose manage since reusing is not required
     # external: true
 
