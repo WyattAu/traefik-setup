@@ -135,7 +135,8 @@ services:
     user: root
 
 networks:
-  default:
-    external:
-      name: traefik_default
-      
+  traefik:
+    name: traefik_default 
+    external: true
+
+    
