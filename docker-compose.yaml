@@ -7,8 +7,11 @@ services:
       # Global Settings
       - --global.checknewversion=false
       - --global.sendanonymoususage=false
+
+      # Ping
       - --ping=true
-      # - --ping.entrypoint=web
+      - --entryPoints.traefik.address=:8082
+
       
       # EntryPoints
       - --entrypoints.web.address=:80

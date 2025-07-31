@@ -3,6 +3,10 @@ global:
   checkNewVersion: false
   sendAnonymousUsage: false
 
+# Ping Configuration  <-- ADD THIS SECTION
+ping:
+  entryPoint: traefik
+
 # EntryPoints Configuration
 entryPoints:
   web:
@@ -19,6 +23,10 @@ entryPoints:
     # HTTP/3 configuration for Traefik v3.5
     http3:
       advertisedPort: 443
+  traefik:           # <-- ADD THIS ENTRYPOINT
+    address: ":8082"
+
+# Rest of your existing config...
 
 # Certificate Resolvers
 certificatesResolvers:
