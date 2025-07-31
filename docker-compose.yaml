@@ -15,7 +15,7 @@ services:
       # Docker Provider
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=${COMPOSE_PROJECT_NAME:-traefik}_default
+      - --providers.docker.network=${COMPOSE_PROJECT_NAME:-traefik}_net
       
       # File Provider
       - --providers.file.directory=/etc/traefik/config/dynamic
@@ -138,7 +138,7 @@ services:
 
 networks:
   traefik:
-    name: ${COMPOSE_PROJECT_NAME:-traefik}_default
+    name: ${COMPOSE_PROJECT_NAME:-traefik}_net
     # Let docker-compose manage since reusing is not required
     # external: true
 
