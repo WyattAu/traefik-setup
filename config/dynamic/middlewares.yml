@@ -1,0 +1,74 @@
+http:
+  middlewares:
+    # Security Headers
+    default-security:
+      headers:
+        # SSL/Security Headers
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        contentTypeNosniff: true
+        referrerPolicy: "same-origin"
+        permissionsPolicy: "geolocation=(), midi=(), notifications=(), push=(), sync-xhr=(), microphone=(), camera=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(self), payment=()"
+        customFrameOptionsValue: "SAMEORIGIN"
+        contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+        
+        # Custom Request Headers
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+          X-Real-IP: ""
+          X-Forwarded-For: ""
+          X-Forwarded-Host: ""
+        
+        # Additional Security
+        hostsProxyHeaders:
+          - "X-Forwarded-Host"
+          - "X-Real-IP"
+          - "X-Forwarded-For"
+          - "X-Forwarded-Proto"
+
+    # Compression
+    default-compress:
+      compress:
+        excludedContentTypes:
+          - "text/event-stream"
+          - "multipart/x-mixed-replace"
+
+    # Retry Logic
+    default-retry:
+      retry:
+        attempts: 3
+        initialInterval: "100ms"
+
+    # Circuit Breaker
+    default-circuit-breaker:
+      circuitBreaker:
+        expression: "NetworkErrorRatio() > 0.5"
+
+    # Rate Limiting (Global)
+    default-rate-limit:
+      rateLimit:
+        average: 200
+        burst: 400
+        period: "1s"
+
+    # IP Whitelisting (Optional - Uncomment if needed)
+    # default-ip-whitelist:
+    #   ipWhiteList:
+    #     sourceRange:
+    #       - "192.168.0.0/16"
+    #       - "10.0.0.0/8"
+
+    # Basic Authentication (Optional - Uncomment if needed)
+    # default-auth:
+    #   basicAuth:
+    #     users:
+    #       - "user:$apr1$H6uskkkW$IgXLP6ewTrSuBkTrqE8wj/"  # user:password
+
+    # Redirect HTTP to HTTPS
+    redirect-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+        port: "443"

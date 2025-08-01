@@ -1,4 +1,3 @@
-# Gitea External Service Configuration
 http:
   routers:
     gitea:
@@ -9,44 +8,52 @@ http:
       tls:
         certResolver: letsencrypt
       middlewares:
-        - gitea-security
-        - gitea-compress
+        - default-security
+        - default-compress
+        - default-retry
+        - gitea-rate-limit
+      
+    # Redirect www to non-www
+    gitea-www:
+      rule: "Host(`www.gitea.mysite.com`)"
+      entryPoints:
+        - websecure
+      service: gitea
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - redirect-to-non-www
 
   services:
     gitea:
       loadBalancer:
         servers:
-          - url: "http://localhost:30008/"
+          - url: "http://host.docker.internal:30008"
         passHostHeader: true
         healthCheck:
           path: /api/healthz
           interval: "30s"
           timeout: "5s"
+          scheme: http
+        serversTransport: default-transport
 
   middlewares:
-    gitea-security:
-      headers:
-        # SSL/Security Headers
-        sslRedirect: true
-        stsSeconds: 31536000
-        stsIncludeSubdomains: true
-        stsPreload: true
-        forceSTSHeader: true
-        contentTypeNosniff: true
-        browserXssFilter: true
-        referrerPolicy: "same-origin"
-        permissionsPolicy: "geolocation=(), midi=(), notifications=(), push=(), sync-xhr=(), microphone=(), camera=(), magnetometer=(), gyroscope=(), speaker=(), vibrate=(), fullscreen=(self), payment=()"
-        
-        # Cloudflare Compatible Headers
-        customFrameOptionsValue: "SAMEORIGIN"
-        customRequestHeaders:
-          X-Forwarded-Proto: "https"
+    gitea-rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+        period: "1s"
+    
+    redirect-to-non-www:
+      redirectRegex:
+        regex: "https://www.gitea.mysite.com/(.*)"
+        replacement: "https://gitea.mysite.com/${1}"
+        permanent: true
 
-    gitea-compress:
-      compress: {}
-
-# Optional: Rate limiting
-#    gitea-rate-limit:
-#      rateLimit:
-#        average: 100
-#        burst: 200
+  serversTransports:
+    default-transport:
+      forwardingTimeouts:
+        dialTimeout: "30s"
+        responseHeaderTimeout: "30s"
+        idleConnTimeout: "90s"
+      maxIdleConnsPerHost: 32
