@@ -1,4 +1,4 @@
-FROM traefik:v3.5
+FROM traefik:3.6
 
 # Add custom configuration
 COPY config/ /etc/traefik/
